@@ -1,0 +1,104 @@
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtGraphConstants.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtGraphConstants.java	(revision 971)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtGraphConstants.java	(working copy)
+@@ -18,6 +18,7 @@
+ 
+ package jmt.gui.jsimgraph.JGraphMod;
+ 
++import jmt.gui.jsimgraph.JGraphMod.arrows.JmtRoutingNew;
+ import org.jgraph.graph.Edge;
+ import org.jgraph.graph.GraphConstants;
+ 
+@@ -31,5 +32,6 @@
+ public class JmtGraphConstants extends GraphConstants {
+ 
+ 	public static final Edge.Routing ROUTING_JMT = new JmtRouting();
++    public static final Edge.Routing ROUTING_JMT_NEW = new JmtRoutingNew();
+ 
+ }
+Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/controller/Mediator.java	(revision 971)
++++ src/main/java/jmt/gui/jsimgraph/controller/Mediator.java	(working copy)
+@@ -78,20 +78,9 @@
+ import jmt.gui.common.xml.ModelLoader;
+ import jmt.gui.common.xml.XMLWriter;
+ import jmt.gui.jsimgraph.DialogFactory;
+-import jmt.gui.jsimgraph.JGraphMod.BlockingRegion;
+-import jmt.gui.jsimgraph.JGraphMod.CellComponent;
+-import jmt.gui.jsimgraph.JGraphMod.CellFactory;
+-import jmt.gui.jsimgraph.JGraphMod.InputPort;
+-import jmt.gui.jsimgraph.JGraphMod.JmtCell;
+-import jmt.gui.jsimgraph.JGraphMod.JmtDefaultCellViewFactory;
+-import jmt.gui.jsimgraph.JGraphMod.JmtEdge;
+-import jmt.gui.jsimgraph.JGraphMod.JmtEdgeView;
+-import jmt.gui.jsimgraph.JGraphMod.JmtGraphConstants;
+-import jmt.gui.jsimgraph.JGraphMod.JmtJGraph;
+-import jmt.gui.jsimgraph.JGraphMod.JmtOverlapping;
+-import jmt.gui.jsimgraph.JGraphMod.OutputPort;
+-import jmt.gui.jsimgraph.JGraphMod.SinkCell;
+-import jmt.gui.jsimgraph.JGraphMod.SourceCell;
++import jmt.gui.jsimgraph.JGraphMod.*;
++import jmt.gui.jsimgraph.JGraphMod.arrows.JmtComponentsMatrix;
++import jmt.gui.jsimgraph.JGraphMod.arrows.JmtRoutingNew;
+ import jmt.gui.jsimgraph.controller.actions.About;
+ import jmt.gui.jsimgraph.controller.actions.AbstractJmodelAction;
+ import jmt.gui.jsimgraph.controller.actions.ActionCopy;
+@@ -262,6 +251,8 @@
+ 
+ 	private JmtOverlapping overlapping;
+ 
++	private JmtComponentsMatrix componentsMatrix;
++
+ 	public Mediator(final JmtJGraph graph, MainWindow mainWindow) {
+ 		this.mainWindow = mainWindow;
+ 		dialogFactory = new DialogFactory(mainWindow);
+@@ -324,11 +315,15 @@
+ 		actionRotate = new ActionRotate(this);
+ 		overlapping = new JmtOverlapping(this);
+ 
++        componentsMatrix = new JmtComponentsMatrix(this);
++
+ 		editUserClasses = new EditUserClasses(this);
+ 		editMeasures = new EditMeasures(this);
+ 		switchToExactSolver = new SwitchToExactSolver(this);
+ 		// Initialize new Component bar
+ 		componentBar = new ComponentBar(this);
++
++        ((JmtRoutingNew) JmtGraphConstants.ROUTING_JMT_NEW).setMediator(this);
+ 	}
+ 
+ 	/**
+@@ -697,6 +692,7 @@
+ 		takeScreenShot.setEnabled(true);
+ 		openedArchive = null;
+ 		mainWindow.updateTitle(null);
++        componentsMatrix.setCellSize(graph.getTolerance());
+ 		// Free same resources by forcing a garbage collection
+ 		System.gc();
+ 	}
+@@ -3289,4 +3285,11 @@
+ 		}
+ 	}
+ 
++	public void addStationCell(Rectangle2D r) {
++        componentsMatrix.addStationCell(r);
++    }
++
++    public JmtComponentsMatrix getComponentsMatrix() {
++        return componentsMatrix;
++    }
+ }
+Index: src/main/java/jmt/gui/jsimgraph/controller/SelectState.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/controller/SelectState.java	(revision 971)
++++ src/main/java/jmt/gui/jsimgraph/controller/SelectState.java	(working copy)
+@@ -90,6 +90,7 @@
+ 			CellView next = mediator.getNextViewAt(ml.getFocus(), point.getX(), point.getY());
+ 			if (next != null && next.getCell() != null) {
+ 				if (!(ml.getFocus() != null && next.getCell() instanceof BlockingRegion)) {
++					mediator.addStationCell(next.getBounds());
+ 					ml.setCell(next);
+ 				}
+ 			}

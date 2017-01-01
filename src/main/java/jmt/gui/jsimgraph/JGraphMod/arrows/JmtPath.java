@@ -1,6 +1,5 @@
 package jmt.gui.jsimgraph.JGraphMod.arrows;
 
-import jmt.common.ConnectionCheck;
 import jmt.common.functional.DynamicHash;
 
 import java.util.ArrayList;
@@ -45,9 +44,9 @@ class JmtPath  {
         return score;
     }
 
-    List<DynamicHash> allPaths(JmtPointerInterface pointer, JmtMatrixCoordinate coord,
-                                    int level, AngleInfo angleInfo) {
-        ArrayList<DynamicHash> matrices = new ArrayList<>();
+    List<JmtIncrementalEdgesMatrix> allPaths(JmtPointer pointer, JmtMatrixCoordinate coord,
+                               int level, AngleInfo angleInfo) {
+        ArrayList<JmtIncrementalEdgesMatrix> matrices = new ArrayList<>();
 
         if (solutionsFound > JmtRoutingNew.Configuration.PATHS_LIMITS) {
             return matrices;
@@ -67,24 +66,20 @@ class JmtPath  {
                 this.score = level;
             }
 
-            DynamicHash h = new DynamicHash();
-            h.put("level", level);
-            h.put("path", pointer.getCompleteArray());
-            List<DynamicHash> l = new ArrayList<>();
-            l.add(h);
-
             solutionsFound++;
-            return l;
+            List<JmtIncrementalEdgesMatrix> solution = new ArrayList<>();
+            solution.add(pointer.getCompleteArray());
+            return solution;
         }
 
-        if (angleInfo.turned == 0)
+        if (angleInfo.turned > 0)
             angleInfo.turnedCounter++;
 
         if (angleInfo.turnedCounter > JmtRoutingNew.Configuration.ANGLE_LIMITS)
             return new ArrayList<>();
 
         //TODO apply analogous idea with score (only length and angles)
-        if ((level + edge.getEndingPoint().xDistance(coord) + edge.getEndingPoint().yDistance(coord)) >
+        if ((level + edge.getEndingPoint().yDistance(coord) + edge.getEndingPoint().xDistance(coord)) >
                 (this.score * JmtRoutingNew.Configuration.NO_PATHS_GREATER_THAN))
             return new ArrayList<>();
 
@@ -103,7 +98,7 @@ class JmtPath  {
 
         //break if try to go in a direction that I cannot reverse
         if((angleInfo.turnedCounter - 1) >= JmtRoutingNew.Configuration.ANGLE_LIMITS
-                && edge.getEndingPoint().xDistance(coord) >1 && edge.getEndingPoint().yDistance(coord) > 1
+                && edge.getEndingPoint().xDistance(coord) > 1 && edge.getEndingPoint().yDistance(coord) > 1
                 && ((coord.getY() < edge.getEndingPoint().getY() && angleInfo.direction == 3)
                 || (coord.getY() > edge.getEndingPoint().getY() && angleInfo.direction == 1)
                 || (coord.getX() < edge.getEndingPoint().getY() && angleInfo.direction == 4)
@@ -166,19 +161,19 @@ class JmtPath  {
         return matrices;
     }
 
-    private List<DynamicHash> nextStep(JmtPointerInterface pointer, JmtMatrixCoordinate coord, int level, AngleInfo angleInfo, Integer direction) {
+    private List<JmtIncrementalEdgesMatrix> nextStep(JmtPointer pointer, JmtMatrixCoordinate coord, int level, AngleInfo angleInfo, Integer direction) {
         switch (direction){
             case 1:
-                coord = coord.xIncrement(1);
-                break;
-            case 2:
                 coord = coord.yIncrement(1);
                 break;
+            case 2:
+                coord = coord.xIncrement(1);
+                break;
             case 3:
-                coord = coord.xIncrement(-1);
+                coord = coord.yIncrement(-1);
                 break;
             case 4:
-                coord = coord.yIncrement(-1);
+                coord = coord.xIncrement(-1);
                 break;
         }
 

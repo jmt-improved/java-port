@@ -17,6 +17,9 @@ public class JmtComponentsMatrix {
     private int cellSize;
     private static final JmtMatrixCell EMPTY_CELL = new JmtMatrixCell(new JmtMatrixCoordinate(-1, -1), 0);
 
+    private int maxX = -1;
+    private int maxY = -1;
+
     private Map<JmtMatrixCoordinate, JmtMatrixCell> cells;
 
     public JmtComponentsMatrix(Mediator mediator) {
@@ -50,9 +53,19 @@ public class JmtComponentsMatrix {
 
     public void addMatrixCell(JmtMatrixCell cell) {
         cells.put(cell.getCoordinate(), cell);
+
+        if (cell.getCoordinate().getX() > maxX) {
+            maxX = cell.getCoordinate().getX();
+        }
+
+        if (cell.getCoordinate().getY() > maxY) {
+            maxY = cell.getCoordinate().getY();
+        }
     }
 
-    public void removeMatrixCell(JmtMatrixCoordinate coord) { cells.remove(coord); }
+    public void removeMatrixCell(JmtMatrixCoordinate coord) {
+        cells.remove(coord);
+    }
 
     public void removeMatrixCell(JmtMatrixCell cell) {
         cells.remove(cell.getCoordinate());
@@ -62,7 +75,7 @@ public class JmtComponentsMatrix {
         Map<JmtMatrixCoordinate.DeltaCoordinate, JmtMatrixCell> neighborsMap =
                 new EnumMap<JmtMatrixCoordinate.DeltaCoordinate, JmtMatrixCell>(JmtMatrixCoordinate.DeltaCoordinate.class);
 
-        for (JmtMatrixCoordinate.DeltaCoordinate coord: JmtMatrixCoordinate.DeltaCoordinate.values()) {
+        for (JmtMatrixCoordinate.DeltaCoordinate coord : JmtMatrixCoordinate.DeltaCoordinate.values()) {
             JmtMatrixCell neighborCell = cells.get(cell.getCoordinate().add(coord));
             if (neighborCell != null) {
                 neighborsMap.put(coord, neighborCell);
@@ -82,5 +95,27 @@ public class JmtComponentsMatrix {
         m.cellSize = this.cellSize;
         m.cells = DeepClone.deepClone(this.cells);
         return m;
+    }
+
+    public boolean containsCell(JmtMatrixCoordinate coord) {
+        return cells.containsKey(coord);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("[ \n");
+        for (int y = 0; y <= maxY; y++) {
+            sb.append(" [ ");
+            for (int x = 0; x < maxX; x++) {
+                sb.append(getMatrixCell(new JmtMatrixCoordinate(x, y)).toString() + ", ");
+            }
+            sb.append(getMatrixCell(new JmtMatrixCoordinate(maxX, y)).toString());
+            sb.append(" ],\n");
+        }
+        sb.append("]\n");
+
+        return sb.toString();
     }
 }

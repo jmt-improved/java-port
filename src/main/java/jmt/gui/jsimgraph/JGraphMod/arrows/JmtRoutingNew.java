@@ -85,16 +85,16 @@ public class JmtRoutingNew implements Edge.Routing {
         }, new ArrayList<ArrayList<JmtIncrementalEdgesMatrix>>(), lines);*/
 
         // Phase 1
-        List<DynamicHash> paths = Functional.reduce(new ReduceCallable<JmtEdgesMatrix.JmtEdge, List<DynamicHash>>() {
+        List<List<JmtIncrementalEdgesMatrix>> paths = Functional.reduce(new ReduceCallable<JmtEdgesMatrix.JmtEdge, List<List<JmtIncrementalEdgesMatrix>>>() {
             @Override
-            public List<DynamicHash> callable(JmtEdgesMatrix.JmtEdge value, List<DynamicHash> accumulator, int pos) {
+            public List<List<JmtIncrementalEdgesMatrix>> callable(JmtEdgesMatrix.JmtEdge value, List<List<JmtIncrementalEdgesMatrix>> accumulator, int pos) {
                 accumulator.add(findMatricesOfLine(mediator.getComponentsMatrix(), lines, pos + 1));
                 return accumulator;
             }
-        }, new ArrayList<DynamicHash>(), lines.getEdges());
+        }, new ArrayList<List<JmtIncrementalEdgesMatrix>>(), lines.getEdges());
 
         // Phase 2
-        List<List<JmtIncrementalEdgesMatrix>> matrices = Functional.reduce(new ReduceCallable<DynamicHash, List<List<JmtIncrementalEdgesMatrix>>>() {
+        /*List<List<JmtIncrementalEdgesMatrix>> matrices = Functional.reduce(new ReduceCallable<DynamicHash, List<List<JmtIncrementalEdgesMatrix>>>() {
             @Override
             public List<List<JmtIncrementalEdgesMatrix>> callable(DynamicHash matrix, List<List<JmtIncrementalEdgesMatrix>> accumulator, int pos) {
                 final int bestMatrix = matrix.get("bestPath");
@@ -118,23 +118,20 @@ public class JmtRoutingNew implements Edge.Routing {
 
                 return accumulator;
             }
-        }, new ArrayList<List<JmtIncrementalEdgesMatrix>>(), paths);
+        }, new ArrayList<List<JmtIncrementalEdgesMatrix>>(), paths);*/
 
         // Phase 3
         JmtEfficientCombination combo = new JmtEfficientCombination(mediator.getComponentsMatrix());
-        combo.getCombinations(matrices, -1, -1);
+        combo.getCombinations(paths, -1, -1);
+        System.out.println(combo.getResult());
     }
 
-    private DynamicHash findMatricesOfLine(JmtComponentsMatrix componentsMatrix, JmtEdgesMatrix lines, int i) {
+    private List<JmtIncrementalEdgesMatrix> findMatricesOfLine(JmtComponentsMatrix componentsMatrix, JmtEdgesMatrix lines, int i) {
         JmtMatrixCoordinate startCoord = lines.getStartingPointOfEdge(i - 1);
         JmtComponentsMatrix matrix = componentsMatrix.copy();
         JmtPath paths = new JmtPath(matrix, lines.get(i - 1), i, lines.get(i - 1).hasRightDirection());
 
-        DynamicHash h = new DynamicHash();
-        h.put("paths", paths.allPaths(null, startCoord, 0, null));
-        h.put("bestPath", paths.getScore());
-
-        return h;
+        return paths.allPaths(null, startCoord, 0, null);
     }
 
     @Override

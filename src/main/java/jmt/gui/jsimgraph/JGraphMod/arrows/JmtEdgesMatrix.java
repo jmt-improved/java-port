@@ -9,8 +9,8 @@ import java.util.List;
  */
 public class JmtEdgesMatrix {
     public class JmtEdge {
-        JmtMatrixCoordinate startingPoint;
-        JmtMatrixCoordinate endingPoint;
+        final JmtMatrixCoordinate startingPoint;
+        final JmtMatrixCoordinate endingPoint;
 
         public JmtMatrixCoordinate getStartingPoint() {
             return startingPoint;
@@ -22,6 +22,11 @@ public class JmtEdgesMatrix {
 
         public boolean hasRightDirection() {
             return startingPoint.getX() < endingPoint.getX();
+        }
+
+        public JmtEdge(JmtMatrixCoordinate startPoint, JmtMatrixCoordinate endPoint) {
+            this.startingPoint = startPoint;
+            this.endingPoint = endPoint;
         }
 
     }
@@ -46,4 +51,7 @@ public class JmtEdgesMatrix {
         return edges.get(edge);
     }
 
+    public void put(JmtMatrixCoordinate startPoint, JmtMatrixCoordinate endPoint) {
+        edges.add(new JmtEdge(startPoint, endPoint));
+    }
 }

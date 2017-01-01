@@ -31,4 +31,9 @@ public class JmtMatrixCell {
     public final int asInteger() {
         return value;
     }
+
+    @Override
+    public String toString() {
+        return String.valueOf(value);
+    }
 }

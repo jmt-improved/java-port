@@ -115,8 +115,13 @@ public class JmtEfficientCombination {
     }
 
     private List<JmtIncrementalEdgesMatrix> getBests(List<List<JmtIncrementalEdgesMatrix>> matrices, int offset,
-                                                          final int len, int maxBests) {
-        final List<Integer> lengths = new ArrayList<>(1);
+                                                     final int len, int maxBests) {
+        // TODO: we can do something better here
+        final List<Integer> lengths = new ArrayList<>(len - offset + 1);
+        lengths.add(1);
+        for (int i = 1; i <= (len - offset); i++) {
+            lengths.add(0);
+        }
         int totLength = 1;
         List<List<JmtIncrementalEdgesMatrix>> arrayAllied = new ArrayList<>();
 
@@ -171,13 +176,26 @@ public class JmtEfficientCombination {
         return Functional.filter(new FilterCallable<Integer>() {
             @Override
             public boolean callable(Integer value, int pos) {
-                if ((matrix.containsKey(coord.xIncrement(-1)) && matrix.containsKey(coord.yIncrement(1)))
-                    || (matrix.containsKey(coord.xIncrement(-1)) && matrix.containsKey(coord.yIncrement(-1)))
-                    || (matrix.containsKey(coord.xIncrement(1)) && matrix.containsKey(coord.yIncrement(1)))
-                    || (matrix.containsKey(coord.xIncrement(1)) && matrix.containsKey(coord.yIncrement(-1))))
+                if ((matrix.containsKey(coord.yIncrement(-1)) && matrix.containsKey(coord.xIncrement(1)))
+                    || (matrix.containsKey(coord.yIncrement(-1)) && matrix.containsKey(coord.xIncrement(-1)))
+                    || (matrix.containsKey(coord.yIncrement(1)) && matrix.containsKey(coord.xIncrement(1)))
+                    || (matrix.containsKey(coord.yIncrement(1)) && matrix.containsKey(coord.xIncrement(-1))))
                     return true;
                 return false;
             }
         }, values).size();
+    }
+
+    public JmtComponentsMatrix getResult() {
+        JmtComponentsMatrix result = componentsMatrix.copy();
+        for (JmtMatrixCoordinate coord : bestCombinationMatrix.keySet()) {
+            if (result.containsCell(coord)) {
+                ((JmtMatrixLineSegmentCell) result.getMatrixCell(coord)).addLines(bestCombinationMatrix.get(coord));
+            } else {
+                JmtMatrixLineSegmentCell lineSegmentCell = new JmtMatrixLineSegmentCell(coord, bestCombinationMatrix.get(coord));
+                result.addMatrixCell(lineSegmentCell);
+            }
+        }
+        return result;
     }
 }

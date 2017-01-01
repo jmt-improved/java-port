@@ -89,7 +89,7 @@ public class JmtMatrixCoordinate {
     @Override
     public int hashCode() {
         int result = x;
-        result = 31 * result + y;
+        result = 10000000 * result + y;
         return result;
     }
 

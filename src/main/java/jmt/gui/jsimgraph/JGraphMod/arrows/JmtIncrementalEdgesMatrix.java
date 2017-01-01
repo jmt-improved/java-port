@@ -1,5 +1,6 @@
 package jmt.gui.jsimgraph.JGraphMod.arrows;
 
+import jmt.common.functional.DeepClone;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
@@ -9,7 +10,7 @@ import java.util.*;
  */
 public class JmtIncrementalEdgesMatrix {
 
-    Map<JmtMatrixCoordinate, ArrayList<Integer>> edges;
+    Map<JmtMatrixCoordinate, List<Integer>> edges;
 
     public JmtIncrementalEdgesMatrix() {
         edges = new HashMap<>();
@@ -19,11 +20,11 @@ public class JmtIncrementalEdgesMatrix {
         return edges.keySet();
     }
 
-    public ArrayList<Integer> get(JmtMatrixCoordinate key) {
+    public List<Integer> get(JmtMatrixCoordinate key) {
         return edges.get(key);
     }
 
-    public ArrayList<Integer> put(JmtMatrixCoordinate key, ArrayList<Integer> value) {
+    public List<Integer> put(JmtMatrixCoordinate key, List<Integer> value) {
         if (containsKey(key)) {
             get(key).addAll(value);
         } else {
@@ -38,7 +39,9 @@ public class JmtIncrementalEdgesMatrix {
     }
 
     public JmtIncrementalEdgesMatrix copy() {
-        throw new NotImplementedException();
+        JmtIncrementalEdgesMatrix newInstance = new JmtIncrementalEdgesMatrix();
+        newInstance.edges = DeepClone.deepClone(this.edges);
+        return newInstance;
     }
 
     public int size() {

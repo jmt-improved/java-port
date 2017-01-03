@@ -94,6 +94,8 @@ public class JmtComponentsMatrix {
         JmtComponentsMatrix m = new JmtComponentsMatrix(this.mediator);
         m.cellSize = this.cellSize;
         m.cells = DeepClone.deepClone(this.cells);
+        m.maxX = this.maxX;
+        m.maxY = this.maxY;
         return m;
     }
 

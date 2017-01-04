@@ -16,7 +16,7 @@ public class JmtMatrixCoordinate {
         /**
          * The top adjacent coordinate.
          */
-        TOP(0, 1),
+        TOP(0, -1),
         /**
          * The left adjacent coordinate.
          */
@@ -24,7 +24,7 @@ public class JmtMatrixCoordinate {
         /**
          * The right adjacent coordinate.
          */
-        RIGHT(0, 1);
+        RIGHT(1, 0);
 
         /**
          * The delta X coordinate.
@@ -102,7 +102,7 @@ public class JmtMatrixCoordinate {
      * @return the new coordinate.
      */
     public JmtMatrixCoordinate add(DeltaCoordinate other) {
-        return new JmtMatrixCoordinate(this.x + other.getDX(), this.x + other.getDY());
+        return new JmtMatrixCoordinate(this.x + other.getDX(), this.y + other.getDY());
     }
 
     /*

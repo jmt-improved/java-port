@@ -5,9 +5,7 @@ import jmt.gui.jsimgraph.controller.Mediator;
 import org.apache.commons.lang.NotImplementedException;
 
 import java.awt.geom.Rectangle2D;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by raffaele on 11/30/16.
@@ -22,6 +20,24 @@ public class JmtComponentsMatrix {
 
     private Map<JmtMatrixCoordinate, JmtMatrixCell> cells;
 
+    public class NextLineSegment {
+        final private JmtMatrixCoordinate.DeltaCoordinate direction;
+        final private JmtMatrixLineSegmentCell cell;
+
+        private NextLineSegment(JmtMatrixCoordinate.DeltaCoordinate direction, JmtMatrixLineSegmentCell cell) {
+            this.direction = direction;
+            this.cell = cell;
+        }
+
+        public JmtMatrixCoordinate.DeltaCoordinate getDirection() {
+            return direction;
+        }
+
+        public JmtMatrixLineSegmentCell getCell() {
+            return cell;
+        }
+    }
+
     public JmtComponentsMatrix(Mediator mediator) {
         this.mediator = mediator;
         this.cells = new HashMap<>();
@@ -34,10 +50,21 @@ public class JmtComponentsMatrix {
         System.out.println("cellSize=" + cellSize);
     }
 
+    public int getCellSize() {
+        return cellSize;
+    }
+
     public void addStationCell(Rectangle2D r) {
-        JmtMatrixCell cell = new JmtMatrixStationCell(new JmtMatrixCoordinate((int) r.getX() / cellSize,
-                (int) r.getY() / cellSize));
-        addMatrixCell(cell);
+        System.out.println(r);
+        System.out.println("x min = " + r.getX() / cellSize + ", x max = " + (r.getX() + r.getWidth()) / cellSize);
+        System.out.println("y min = " + r.getY() / cellSize + ", y max = " + (r.getY() + r.getHeight()) / cellSize);
+        for(int x = (int) r.getX() / cellSize; x < (r.getX() + r.getWidth()) / cellSize; x++) {
+            for (int y = (int) Math.floor(r.getY() / cellSize); y < (r.getY() + r.getHeight()) / cellSize; y++) {
+                JmtMatrixCell cell = new JmtMatrixStationCell(new JmtMatrixCoordinate(x, y));
+                addMatrixCell(cell);
+            }
+        }
+        System.out.println("Components Matrix:\n" + this);
     }
 
     public JmtMatrixCell getMatrixCell(JmtMatrixCoordinate coord) {
@@ -61,6 +88,37 @@ public class JmtComponentsMatrix {
         if (cell.getCoordinate().getY() > maxY) {
             maxY = cell.getCoordinate().getY();
         }
+    }
+
+    public void resetVisit() {
+        for(JmtMatrixCell cell: cells.values()) {
+            if (cell instanceof JmtMatrixLineSegmentCell) {
+                ((JmtMatrixLineSegmentCell) cell).setVisited(false);
+            }
+        }
+    }
+
+    public NextLineSegment getNextLineSegment(JmtMatrixLineSegmentCell cell, Integer value) {
+
+        for (JmtMatrixCoordinate.DeltaCoordinate coord : JmtMatrixCoordinate.DeltaCoordinate.values()) {
+            JmtMatrixCell neighborCell = cells.get(cell.getCoordinate().add(coord));
+            if (neighborCell != null && neighborCell.getClass() == cell.getClass()) {
+                JmtMatrixLineSegmentCell nCell = (JmtMatrixLineSegmentCell) neighborCell;
+                if (nCell.isVisited()) {
+                    continue;
+                }
+
+                Set<Integer> intersection = new HashSet<>(nCell.getAllLines());
+                intersection.retainAll(cell.getAllLines());
+                //if (intersection.size() > 0) {
+                if(nCell.constainsLine(value)) {
+                    nCell.setVisited(true);
+                    return new NextLineSegment(coord, nCell);
+                }
+            }
+        }
+
+        return null;
     }
 
     public void removeMatrixCell(JmtMatrixCoordinate coord) {

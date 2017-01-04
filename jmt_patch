@@ -17,11 +17,23 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtGraphConstants.java
 +    public static final Edge.Routing ROUTING_JMT_NEW = new JmtRoutingNew();
  
  }
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java	(revision 971)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java	(working copy)
+@@ -59,6 +59,7 @@
+ 		}
+ 
+ 		if (from != null && to != null) {
++			System.out.println("From = " + from + ", to = " + to);
+ 			JmtEdge edge = (JmtEdge) edgeView.getCell();//qua era defaultEdge l ho cambiato
+ 			JmtCell source = (JmtCell) ((DefaultPort) edge.getSource()).getParent();
+ 			JmtCell target = (JmtCell) ((DefaultPort) edge.getTarget()).getParent();
 Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/controller/Mediator.java	(revision 971)
 +++ src/main/java/jmt/gui/jsimgraph/controller/Mediator.java	(working copy)
-@@ -78,20 +78,9 @@
+@@ -78,20 +78,11 @@
  import jmt.gui.common.xml.ModelLoader;
  import jmt.gui.common.xml.XMLWriter;
  import jmt.gui.jsimgraph.DialogFactory;
@@ -41,24 +53,28 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 -import jmt.gui.jsimgraph.JGraphMod.SourceCell;
 +import jmt.gui.jsimgraph.JGraphMod.*;
 +import jmt.gui.jsimgraph.JGraphMod.arrows.JmtComponentsMatrix;
++import jmt.gui.jsimgraph.JGraphMod.arrows.JmtEdgesMatrix;
++import jmt.gui.jsimgraph.JGraphMod.arrows.JmtMatrixCoordinate;
 +import jmt.gui.jsimgraph.JGraphMod.arrows.JmtRoutingNew;
  import jmt.gui.jsimgraph.controller.actions.About;
  import jmt.gui.jsimgraph.controller.actions.AbstractJmodelAction;
  import jmt.gui.jsimgraph.controller.actions.ActionCopy;
-@@ -262,6 +251,8 @@
+@@ -262,6 +253,9 @@
  
  	private JmtOverlapping overlapping;
  
 +	private JmtComponentsMatrix componentsMatrix;
++	private JmtEdgesMatrix connectionsMatrix;
 +
  	public Mediator(final JmtJGraph graph, MainWindow mainWindow) {
  		this.mainWindow = mainWindow;
  		dialogFactory = new DialogFactory(mainWindow);
-@@ -324,11 +315,15 @@
+@@ -324,11 +318,16 @@
  		actionRotate = new ActionRotate(this);
  		overlapping = new JmtOverlapping(this);
  
 +        componentsMatrix = new JmtComponentsMatrix(this);
++        connectionsMatrix = new JmtEdgesMatrix();
 +
  		editUserClasses = new EditUserClasses(this);
  		editMeasures = new EditMeasures(this);
@@ -70,15 +86,41 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  	}
  
  	/**
-@@ -697,6 +692,7 @@
+@@ -697,6 +696,8 @@
  		takeScreenShot.setEnabled(true);
  		openedArchive = null;
  		mainWindow.updateTitle(null);
-+        componentsMatrix.setCellSize(graph.getTolerance());
++        //componentsMatrix.setCellSize(graph.getTolerance());
++		componentsMatrix.setCellSize(50);
  		// Free same resources by forcing a garbage collection
  		System.gc();
  	}
-@@ -3289,4 +3285,11 @@
+@@ -996,8 +997,8 @@
+ 			list.add(p2);
+ 			Map map = new Hashtable();
+ 			GraphConstants.setPoints(map, list);
+-			GraphConstants.setRouting(map, GraphConstants.ROUTING_SIMPLE);
+-			GraphConstants.setRouting(map, JmtGraphConstants.ROUTING_JMT);
++			//GraphConstants.setRouting(map, GraphConstants.ROUTING_SIMPLE);
++			GraphConstants.setRouting(map, JmtGraphConstants.ROUTING_JMT_NEW);
+ 			GraphConstants.setLineEnd(map, GraphConstants.ARROW_CLASSIC);
+ 			GraphConstants.setEndFill(map, true);
+ 			GraphConstants.setDisconnectable(map, false);
+@@ -1013,6 +1014,13 @@
+ 			cs.connect(connection, inPort.getCell(), false);
+ 			// Visualizes connection only if it can be created into data structure
+ 			if (model.setConnected(sourceKey, targetKey, true)) {
++				int startX = (int) p.getX() / componentsMatrix.getCellSize() + 1;
++				int startY = (int) p.getY() / componentsMatrix.getCellSize();
++
++				int endX = (int) p2.getX() / componentsMatrix.getCellSize() - 1;
++				int endY = (int) p2.getY() / componentsMatrix.getCellSize();
++				connectionsMatrix.put(new JmtMatrixCoordinate(startX, startY), new JmtMatrixCoordinate(endX, endY));
++				//((JmtRoutingNew) JmtGraphConstants.ROUTING_JMT_NEW).bestMatrix();
+ 				graph.getModel().insert(insert, viewMap, cs, null, null);
+ 			}
+ 		}
+@@ -3289,4 +3297,15 @@
  		}
  	}
  
@@ -89,6 +131,10 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +    public JmtComponentsMatrix getComponentsMatrix() {
 +        return componentsMatrix;
 +    }
++
++	public JmtEdgesMatrix getConnectionsMatrix() {
++		return connectionsMatrix;
++	}
  }
 Index: src/main/java/jmt/gui/jsimgraph/controller/SelectState.java
 ===================================================================

@@ -189,12 +189,9 @@ public class JmtEfficientCombination {
     public JmtComponentsMatrix getResult() {
         JmtComponentsMatrix result = componentsMatrix.copy();
         for (JmtMatrixCoordinate coord : bestCombinationMatrix.keySet()) {
-            if (result.containsCell(coord)) {
-                ((JmtMatrixLineSegmentCell) result.getMatrixCell(coord)).addLines(bestCombinationMatrix.get(coord));
-            } else {
-                JmtMatrixLineSegmentCell lineSegmentCell = new JmtMatrixLineSegmentCell(coord, bestCombinationMatrix.get(coord));
-                result.addMatrixCell(lineSegmentCell);
-            }
+            JmtMatrixLineSegmentCell lineSegmentCell = new JmtMatrixLineSegmentCell(coord, bestCombinationMatrix.get(coord));
+            result.addMatrixCell(lineSegmentCell);
+
         }
         return result;
     }

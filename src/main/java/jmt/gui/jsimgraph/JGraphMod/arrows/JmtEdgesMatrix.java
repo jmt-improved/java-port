@@ -54,4 +54,6 @@ public class JmtEdgesMatrix {
     public void put(JmtMatrixCoordinate startPoint, JmtMatrixCoordinate endPoint) {
         edges.add(new JmtEdge(startPoint, endPoint));
     }
+
+
 }

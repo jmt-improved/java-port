@@ -36,4 +36,22 @@ public class JmtMatrixCell {
     public String toString() {
         return String.valueOf(value);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        JmtMatrixCell that = (JmtMatrixCell) o;
+
+        if (value != that.value) return false;
+        return coordinate != null ? coordinate.equals(that.coordinate) : that.coordinate == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = coordinate != null ? coordinate.hashCode() : 0;
+        result = 31 * result + value;
+        return result;
+    }
 }

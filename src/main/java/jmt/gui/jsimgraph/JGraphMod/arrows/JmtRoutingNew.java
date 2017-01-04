@@ -5,13 +5,17 @@ import jmt.gui.jsimgraph.controller.Mediator;
 import org.jgraph.graph.Edge;
 import org.jgraph.graph.EdgeView;
 import org.jgraph.graph.GraphConstants;
+import org.jgraph.graph.PortView;
 
+import java.awt.geom.Point2D;
 import java.util.*;
 
 /**
  * Created by raffaele on 12/18/16.
  */
 public class JmtRoutingNew implements Edge.Routing {
+
+    private JmtComponentsMatrix result;
 
     static class Configuration {
         static final int LENGTH_SCORE = 1;
@@ -32,9 +36,12 @@ public class JmtRoutingNew implements Edge.Routing {
 
     private static int firstHDir = 0;
     private static int counter = 0;
+    Point2D lastTo, lastFrom;
+    int c = 0;
 
     public JmtRoutingNew() {
-        bestMatrix();
+        lastTo = new Point2D.Double(-1, -1);
+        lastFrom = new Point2D.Double(-1, -1);
     }
 
     static int getFirstHDir() { return firstHDir; }
@@ -47,8 +54,7 @@ public class JmtRoutingNew implements Edge.Routing {
         this.mediator = mediator;
     }
 
-    private void bestMatrix() {
-        final JmtEdgesMatrix lines = new JmtEdgesMatrix();
+    public void bestMatrix() {
         /* Così mi ricordo come funge sta roba
         ArrayList<Integer> input = new ArrayList<>();
         input.add(-1);
@@ -88,10 +94,10 @@ public class JmtRoutingNew implements Edge.Routing {
         List<List<JmtIncrementalEdgesMatrix>> paths = Functional.reduce(new ReduceCallable<JmtEdgesMatrix.JmtEdge, List<List<JmtIncrementalEdgesMatrix>>>() {
             @Override
             public List<List<JmtIncrementalEdgesMatrix>> callable(JmtEdgesMatrix.JmtEdge value, List<List<JmtIncrementalEdgesMatrix>> accumulator, int pos) {
-                accumulator.add(findMatricesOfLine(mediator.getComponentsMatrix(), lines, pos + 1));
+                accumulator.add(findMatricesOfLine(mediator.getComponentsMatrix(), mediator.getConnectionsMatrix(), pos + 1));
                 return accumulator;
             }
-        }, new ArrayList<List<JmtIncrementalEdgesMatrix>>(), lines.getEdges());
+        }, new ArrayList<List<JmtIncrementalEdgesMatrix>>(), mediator.getConnectionsMatrix().getEdges());
 
         // Phase 2
         /*List<List<JmtIncrementalEdgesMatrix>> matrices = Functional.reduce(new ReduceCallable<DynamicHash, List<List<JmtIncrementalEdgesMatrix>>>() {
@@ -122,8 +128,8 @@ public class JmtRoutingNew implements Edge.Routing {
 
         // Phase 3
         JmtEfficientCombination combo = new JmtEfficientCombination(mediator.getComponentsMatrix());
-        combo.getCombinations(paths, -1, -1);
-        System.out.println(combo.getResult());
+        result = combo.getCombinations(paths, -1, -1).getResult();
+        //System.out.println(result);
     }
 
     private List<JmtIncrementalEdgesMatrix> findMatricesOfLine(JmtComponentsMatrix componentsMatrix, JmtEdgesMatrix lines, int i) {
@@ -135,8 +141,66 @@ public class JmtRoutingNew implements Edge.Routing {
     }
 
     @Override
-    public List route(EdgeView edgeView) {
-        return null;
+    public List<Point2D> route(EdgeView edgeView) {
+        Point2D from = edgeView.getPoint(0);
+        Point2D to = edgeView.getPoint(edgeView.getPointCount() - 1);
+
+        if (!from.equals(lastFrom) || !to.equals(lastTo)) {
+            bestMatrix();
+            lastFrom = from;
+            lastTo = to;
+            System.out.println(++c);
+        }
+
+        JmtMatrixCell startCell = result.getMatrixCell(new JmtMatrixCoordinate((int) from.getX() / result.getCellSize() + 1, (int) from.getY() / result.getCellSize()));
+        JmtMatrixCell endCell = result.getMatrixCell(new JmtMatrixCoordinate((int) to.getX() / result.getCellSize() - 1, (int) to.getY() / result.getCellSize()));
+        List<Point2D> points = new ArrayList<>();
+
+        assert (startCell instanceof JmtMatrixLineSegmentCell);
+        assert (endCell instanceof JmtMatrixLineSegmentCell);
+
+        Set<Integer> intersection = new HashSet<>(((JmtMatrixLineSegmentCell) startCell).getAllLines());
+        intersection.retainAll(((JmtMatrixLineSegmentCell) endCell).getAllLines());
+
+        assert(intersection.size() == 1);
+        JmtMatrixCoordinate.DeltaCoordinate curDirection = JmtMatrixCoordinate.DeltaCoordinate.LEFT;
+        JmtMatrixLineSegmentCell curCell = (JmtMatrixLineSegmentCell) startCell;
+
+        result.resetVisit();
+
+        curCell.setVisited(true);
+
+        points.add(from);
+
+        Point2D curPoint = from;
+        while(!curCell.equals(endCell)) {
+            JmtComponentsMatrix.NextLineSegment nextLineSegment = result.getNextLineSegment(curCell, intersection.iterator().next());
+
+            switch (curDirection) {
+                case LEFT:
+                case RIGHT:
+                    if (nextLineSegment.getDirection() == JmtMatrixCoordinate.DeltaCoordinate.TOP
+                            || nextLineSegment.getDirection() == JmtMatrixCoordinate.DeltaCoordinate.BOTTOM) {
+                        curPoint = new Point2D.Double(curCell.getCoordinate().getX() * result.getCellSize() + result.getCellSize() / 2, curPoint.getY());
+                    }
+                    break;
+                case BOTTOM:
+                case TOP:
+                    if (nextLineSegment.getDirection() == JmtMatrixCoordinate.DeltaCoordinate.LEFT
+                            || nextLineSegment.getDirection() == JmtMatrixCoordinate.DeltaCoordinate.RIGHT) {
+                        curPoint = new Point2D.Double(curPoint.getX(), curCell.getCoordinate().getY() * result.getCellSize() + result.getCellSize() / 2);
+                    }
+                    break;
+
+            }
+            points.add(curPoint);
+
+            curCell = nextLineSegment.getCell();
+            curDirection = nextLineSegment.getDirection();
+        }
+
+        points.add(to);
+        return points;
     }
 
     @Override

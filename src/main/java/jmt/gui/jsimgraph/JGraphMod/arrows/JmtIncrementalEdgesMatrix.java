@@ -21,17 +21,15 @@ public class JmtIncrementalEdgesMatrix {
     }
 
     public List<Integer> get(JmtMatrixCoordinate key) {
-        return edges.get(key);
+        return DeepClone.deepClone(edges.get(key));
     }
 
-    public List<Integer> put(JmtMatrixCoordinate key, List<Integer> value) {
+    public void put(JmtMatrixCoordinate key, List<Integer> value) {
         if (containsKey(key)) {
-            get(key).addAll(value);
+            edges.get(key).addAll(value);
         } else {
             edges.put(key, value);
         }
-
-        return get(key);
     }
 
     public boolean containsKey(JmtMatrixCoordinate key) {
